@@ -11,6 +11,12 @@ class User < ApplicationRecord
   has_many :followings, through: :relationships, source: :follow
   has_many :reverses_of_relationship, class_name: 'Relationship', foreign_key: 'follow_id'
   has_many :followers, through: :reverses_of_relationship, source: :user
+  #あるユーザがお気に入り登録した投稿一覧
+  has_many :likes
+  has_many :like_posts, through: :likes, source: :micropost
+  #特定の投稿をお気に入り登録したユーザの一覧
+  #has_many :reverses_of_like, class_name: 'Like', foreign_key: 'micropost_id'
+  #has_many :liked_posts, through: :reverses_of_like, source: :user
   
   def follow(other_user)
     unless self == other_user
@@ -29,5 +35,19 @@ class User < ApplicationRecord
   
   def feed_microposts
     Micropost.where(user_id: self.following_ids + [self.id])
+  end
+  
+  ## ここからお気に入り機能
+  def like(post)
+      self.likes.find_or_create_by(micropost_id: post.id)
+  end
+
+  def unlike(post)
+    like = self.likes.find_by(micropost_id: post.id)
+    like.destroy if like
+  end
+
+  def like?(post)
+    self.like_posts.include?(post)
   end
 end
